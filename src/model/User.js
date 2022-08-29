@@ -1,134 +1,140 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const userSchema = mongoose.Schema({
+const userSchema = mongoose.Schema(
+  {
     fname: {
-        type: String,
-        trim: true,
-        required: true
+      type: String,
+      trim: true,
+      required: true,
     },
     lname: {
-        type: String,
-        trim: true,
-        required: true
+      type: String,
+      trim: true,
+      required: true,
     },
     gender: {
-        type: String,
-        trim: true,
-        required: true
+      type: String,
+      trim: true,
+      required: true,
     },
     phone: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    location: {
+      country: {
         type: String,
         trim: true,
-        required: true
-    },
-    location:{
-        country: {
-            type:String,
-            trim: true,
-            default: 'Rwanda'
-        },
-        province: {
-            type:String,
-            trim: true
-        },
-        district: {
-            type:String,
-            trim: true
-        },
-        sector: {
-            type:String,
-            trim: true
-        },
-        cell: {
-            type:String,
-            trim: true
-        }
-    },
-    email:{
-        type: String,
-        trim: true
-    },
-    userType:{
+        default: "Rwanda",
+      },
+      province: {
         type: String,
         trim: true,
-        default: 'farmer'
+      },
+      district: {
+        type: String,
+        trim: true,
+      },
+      sector: {
+        type: String,
+        trim: true,
+      },
+      cell: {
+        type: String,
+        trim: true,
+      },
+    },
+    email: {
+      type: String,
+      trim: true,
+    },
+    userType: {
+      type: String,
+      trim: true,
+      default: "farmer",
     },
     password: {
-        type: String,
-        trim: true,
-        required: true
+      type: String,
+      trim: true,
+      required: true,
     },
-    tokens: [{
-        token:{
-            type: String,
-            trim: true
-        }
-    }]
-}, {
-    timestamps: true
-});
+    tokens: [
+      {
+        token: {
+          type: String,
+          trim: true,
+          default:
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MzBjYjE1NzZhMzZhNjVjNmYzMDI4NjciLCJpYXQiOjE2NjE3Nzg0Mjh9.FDwiDOPP4Rk-TsKZWP0_wvenJBssGCnosHm1KJEN4f8",
+        },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
-userSchema.methods.toJSON = function() {
-    const user = this
-    const userObject = user.toObject()
+userSchema.methods.toJSON = function () {
+  const user = this;
+  const userObject = user.toObject();
+  console.log(user);
 
-    // const replacewith = `${process.env.SITE_URL}/profile-Pictures`
+  // const replacewith = `${process.env.SITE_URL}/profile-Pictures`
 
-    // userObject.profile = `${userObject.profile.replace('profile-Pictures', replacewith)}`
+  // userObject.profile = `${userObject.profile.replace('profile-Pictures', replacewith)}`
 
-    userObject.token = user.tokens[(user.tokens).length -1].token
+  userObject.token = user?.tokens[user?.tokens?.length - 1]?.token;
 
-    delete userObject.password
-    delete userObject.tokens
+  delete userObject.password;
+  delete userObject?.tokens;
 
+  return userObject;
+};
 
-    return userObject
-}
+userSchema.methods.generateAuthToken = async function () {
+  const user = this;
+  const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET);
 
-userSchema.methods.generateAuthToken = async function() {
-    const user = this
-    const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET)
+  user.tokens = user.tokens.concat({ token });
+  await user.save();
 
-    user.tokens = user.tokens.concat({ token })
-    await user.save()
+  return token;
+};
 
-    return token
-}
+userSchema.statics.findByCredentials = async (phone, password) => {
+  if (!phone || !password) {
+    throw new Error("You must provide phone number and password");
+  }
 
-userSchema.statics.findByCredentials = async(phone, password) => {
+  const user = await User.findOne({ phone });
 
-    if (!phone || !password) {
-        throw new Error('You must provide phone number and password')
-    }
+  if (!user) {
+    throw new Error("Phone number Not Found !!!");
+  }
 
-    const user = await User.findOne({ phone })
+  const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!user) {
-        throw new Error('Phone number Not Found !!!')
-    }
+  if (!isMatch) {
+    throw new Error("Wrong Password !!!");
+  }
 
-    const isMatch = await bcrypt.compare(password, user.password)
-
-    if (!isMatch) {
-        throw new Error('Wrong Password !!!')
-    }
-
-    return user
-}
+  return user;
+};
 
 // Hash the plain text password before save
-userSchema.pre('save', async function(next) {
-    const user = this
+userSchema.pre("save", async function (next) {
+  const user = this;
 
-    if (user.isModified('password')) {
-        user.password = await bcrypt.hash(user.password, 8)
-    }
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(user.password, 8);
+  }
 
-    next();
-})
+  next();
+});
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;
