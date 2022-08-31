@@ -105,10 +105,7 @@ const generateReport = [
     try {
       const { location, phone, fname, lname } = req.user;
 
-      const disease = {
-        name: "Tomato Septoria",
-        description: "this tomato huwekjfergggggggggggggggggggggggg",
-      };
+      const { disease } = req.body;
 
       const report = new InfectedTomato({
         ...{
