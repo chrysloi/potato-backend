@@ -173,7 +173,7 @@ const approveReport = [
       }
 
       switch (userType) {
-        case "extension-officer":
+        case "extension_officer":
           const extension_officer = {
             agro: req.user.fname + " " + req.user.lname,
             ...req.body,
