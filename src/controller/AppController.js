@@ -173,24 +173,14 @@ const approveReport = [
       }
 
       switch (userType) {
-        case "cell":
-          const sector = {
+        case "extension-officer":
+          const extension_officer = {
             agro: req.user.fname + " " + req.user.lname,
             ...req.body,
           };
 
-          report.observation.sector = sector;
+          report.observation.extension_officer = extension_officer;
 
-          await report.save();
-
-          return res.json({ status: 204, message: "successfull", report });
-        case "district":
-          const district = {
-            agro: req.user.fname + " " + req.user.lname,
-            ...req.body,
-          };
-
-          report.observation.district = district;
           await report.save();
 
           return res.json({ status: 204, message: "successfull", report });
